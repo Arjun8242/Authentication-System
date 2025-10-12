@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { connectdb } from "./db/db.js";
 import userRoutes from "./routes/user.js";
 import {createClient} from 'redis';
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 await connectdb();
@@ -24,6 +25,7 @@ redisClient
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 
 app.use("/api/v1", userRoutes);
 
