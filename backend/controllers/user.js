@@ -153,16 +153,18 @@ export const loginUser = TryCatch(async(req, res) => {
     const {email, password} = validation.data;
 
     //ratelimit for otp
+    //can only send 2 request per 1.5 minute
 
-    const rateLimitKey = `login-rate-limit:${req.ip}:${email}`;
-
-    if(await redisClient.get(rateLimitKey)){
-        return res.status(429).json({
-            message:"too many request, slwo down lil nigga"
-        })
+    const key = `login-attempts:${req.ip}:${email}`;
+    const attempts = await redisClient.incr(key);
+    if (attempts === 1) {
+    await redisClient.expire(key, 90);
+    }
+    if (attempts > 2) {
+    return res.status(429).json({ message: "Too many requests, slow down lil nigga" });
     }
 
-    const user = await User.findOne({email});
+    const user = await User.findOne({email}).select("+password");
 
     if(!user){
         return res.status(400).json({
@@ -189,10 +191,8 @@ export const loginUser = TryCatch(async(req, res) => {
     const html=  getOtpHtml({ email, otp});
 
     await sendMail({ email, subject, html});
-
-    await redisClient.set(rateLimitKey, "true");
     
-    return req.json({
+    return res.json({
         message: "if your email is vali, and otp has been sent. It will be valid for only 5 mins"
     });
 });
@@ -210,7 +210,7 @@ export const verifyOtp = TryCatch(async(req, res) => {
 
     const otpstoredstring = await redisClient.get(otpkey);
 
-    if(otpstoredstring){
+    if(!otpstoredstring){
         return res.status(400).json({
             message: "Otp is expired",
         })
