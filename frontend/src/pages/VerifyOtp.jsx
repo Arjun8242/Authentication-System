@@ -3,13 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { server } from "../main";
 import { toast } from "react-toastify";
-// import { AppData } from "../context/AppContext";
+import { AppData } from "../context/AppContext";
 
 const VerifyOtp = () => {
   const [otp, setOtp] = useState("");
   const [btnLoading, setBtnLoading] = useState(false);
   const navigate = useNavigate();
-  // const { setIsAuth, setUser } = AppData();
+  const { setIsAuth, setUser } = AppData();
 
 const submitHandler = async (e) => {
   setBtnLoading(true);

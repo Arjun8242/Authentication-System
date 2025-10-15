@@ -53,8 +53,8 @@ export const generateAccessToken = (id, res) => {
     })
     res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        // secure: true,
-        sameSite: "strict",// to avoid csrf attck
+        secure: true,
+        sameSite: "none",// to avoid csrf attck
         maxAge: 1*60*1000,
     })
 };
