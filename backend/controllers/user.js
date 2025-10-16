@@ -8,6 +8,7 @@ import crypto from 'crypto';
 import { getOtpHtml, getVerifyEmailHtml } from "../config/html.js";
 import sendMail from "../config/sendmail.js";
 import { generateAccessToken, generateToken, revokeRefreshToken, verifyRefreshToken } from "../config/generateToken.js";
+import { generateCSRFToken } from "../config/csrfMiddleware.js";
 
 export const signupUser = TryCatch(async (req, res) => {
     
@@ -272,6 +273,7 @@ export const logoutUser = TryCatch(async(req, res) => {
 
     res.clear.cookie("refreshToken");
     res.clear.cookie("accessToken");
+    res.clear.cookie("csrfToken");
     
     await redisClient.del(`user:${userId}`);
 
@@ -279,4 +281,16 @@ export const logoutUser = TryCatch(async(req, res) => {
         message: "Logged out successfully",
     })
 
+});
+
+export const refreshCSRF = TryCatch(async(req, res) => {
+    const userId = req.user._id;
+
+    const newCSRFToken = await generateCSRFToken(userId, res);
+
+    return res.json({
+        message: "CSRF token refreshed succesfully.",
+        csrfToken : newCSRFToken,
+    })
 })
+
