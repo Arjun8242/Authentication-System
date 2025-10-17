@@ -1,7 +1,7 @@
 import { createContext, useContext,
     useEffect, useState} from "react";
-import { server } from "../main";
 import api from "../apiInterceptor.js";
+import {toast} from "react-toastify";
 
 const AppContext = createContext(null);
 
@@ -39,7 +39,7 @@ export const AppProvider = ({ children }) => {
     }
 
     useEffect(() => {
-        fetchUser()
+        fetchUser();
     }, [])
 
     return (

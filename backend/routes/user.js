@@ -1,7 +1,7 @@
 import express from "express"
 import { loginUser, logoutUser, myProfile, refreshCSRF, refreshToken, signupUser, verifyOtp, verifyUser } from "../controllers/user.js";
 import { Auth } from "../middleware/auth.js";
-import {verifyCSRFToken} from "../config/csrfMiddleware.js;"
+import {verifyCSRFToken} from "../config/csrfMiddleware.js"
 
 const router = express.Router();
 

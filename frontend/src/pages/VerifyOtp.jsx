@@ -26,7 +26,7 @@ const submitHandler = async (e) => {
     toast.success(data.message);
     setIsAuth(true);
     setUser(data.user);
-    localStorage.removeItem("email");
+    localStorage.clear("email");
     navigate("/");
   } catch (error) {
     toast.error(error.response?.data?.message || "Something went wrong");
