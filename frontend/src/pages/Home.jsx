@@ -3,14 +3,15 @@ import { AppData } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
 function Home() {
-  const { logoutUser } = AppData();
+  const { user, logoutUser } = AppData();
   const navigate = useNavigate();
 
   return (
-    <div className="flex justify-center mt-40">
+    <div className="flex flex-col items-center justify-center h-screen">
+      <h1 className="text-3xl font-bold mb-4">Welcome, {user?.name}</h1>
       <button
-        className="bg-black text-white p-2 rounded-md"
         onClick={() => logoutUser(navigate)}
+        className="px-4 py-2 bg-red-500 text-white rounded-md"
       >
         Logout
       </button>

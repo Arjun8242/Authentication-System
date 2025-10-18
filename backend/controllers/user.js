@@ -240,7 +240,7 @@ export const myProfile = TryCatch(async(req, res) => {
     
     const user = req.user;
 
-    res.json(user);
+    res.json({user});
 })
 
 export const refreshToken = TryCatch(async(req, res) => {
@@ -271,9 +271,9 @@ export const logoutUser = TryCatch(async(req, res) => {
 
     await revokeRefreshToken(userId);
 
-    res.clear.cookie("refreshToken");
-    res.clear.cookie("accessToken");
-    res.clear.cookie("csrfToken");
+    res.clearCookie("refreshToken");
+    res.clearCookie("accessToken");
+    res.clearCookie("csrfToken");
     
     await redisClient.del(`user:${userId}`);
 

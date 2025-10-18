@@ -15,13 +15,13 @@ export const generateToken = async(id, res) => {
 
     await redisClient.setEx(refreshTokenKey, 7*24*60*60, refreshToken);
 
-    res.cookie("accessToken", {
+    res.cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: true,
         sameSite: "none",// to avoid csrf attck
-        maxAge: 1*60*1000,
+        maxAge: 15*60*1000,
     })
-    res.cookie("refreshToken", {
+    res.cookie("refreshToken", refreshToken, {
         maxAge: 7*24*60*60*1000,
         httpOnly: true,
         sameSite: "none",
@@ -52,13 +52,13 @@ export const verifyRefreshToken = async(refreshToken) => {
 
 export const generateAccessToken = (id, res) => {
     const accessToken = jwt.sign({id}, process.env.JWT_SECRET, {
-        expiresIn: "2m",
+        expiresIn: "15m",
     })
     res.cookie("accessToken", accessToken, {
         httpOnly: true,
         secure: true,
         sameSite: "none",// to avoid csrf attck
-        maxAge: 1*60*1000,
+        maxAge: 15*60*1000,
     })
 };
 

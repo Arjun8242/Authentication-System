@@ -9,20 +9,27 @@ function Login() {
   const [password, setPassword] = useState("");
   const [btnLoading, setBtnLoading] = useState(false);
   const navigate = useNavigate();
-  const submitHandler = async(e) => {
-    setBtnLoading(true);
-    e.preventDefault();
-    try {
-      const {data} = await axios.post(`${server}/api/v1/login`, {email, password})
-      toast.success(data.message);
-      localStorage.setItem("email", email);
-      navigate("/verifyotp");
-    } catch (error) {
-      toast.error(error.response.data.message);
-    }finally{
-      setBtnLoading(false);
-    }
+ const submitHandler = async (e) => {
+  e.preventDefault();
+  setBtnLoading(true);
+  
+  try {
+    const { data } = await axios.post(`${server}/api/v1/login`, { email, password }, { withCredentials: true });
+    
+    toast.success(data.message);
+    localStorage.setItem("email", email);
+    navigate("/verifyotp");
+  } 
+  catch (error) {
+    console.error("Login error:", error);
+    const message = error.response?.data?.message || error.message || "Login failed!";
+    toast.error(message);
+  } 
+  finally {
+    setBtnLoading(false);
   }
+};
+
   return (
     <section className="text-gray-600 body-font">
   <div className="container px-5 py-24 mx-auto flex flex-wrap items-center">

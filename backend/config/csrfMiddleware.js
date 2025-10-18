@@ -49,7 +49,7 @@ export const verifyCSRFToken = async(req, res, next) => {
 
         const storedToken = await redisClient.get(csrfKey);
 
-        if(!storedKey) {
+        if(!storedToken) {
             return res.status(403).json({
                 message: "CSRF Token Expired. Please try again",
                 code: "CSRF_TOKEN_EXPIRED",

@@ -6,6 +6,9 @@ import {ToastContainer} from  "react-toastify"
 import VerifyOtp from './pages/VerifyOtp';
 import { AppData } from './context/AppContext';
 import Loading from './Loading';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Verify from './pages/verify';
 
 
 const App = () => {
@@ -19,7 +22,10 @@ const App = () => {
     <Routes>
       <Route path="/" element={isAuth? <Home />:<Login />}/>
       <Route path="/login" element={isAuth? <Home />:<Login />}/>
-      <Route path="/verifyotp" element={isAuth? <Home />:<VerifyOtp />}/>
+      <Route path="/verifyotp" element={<VerifyOtp />}/>
+      <Route path="/register" element={isAuth ? <Home /> : <Register />} />
+      <Route path="/dashboard" element={isAuth ? <Dashboard /> : <Login />} />
+      <Route path="//token/:token" element={isAuth ? <Home /> : <Verify/>} />
     </Routes>
     <ToastContainer />
     </BrowserRouter>
