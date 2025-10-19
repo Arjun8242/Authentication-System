@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { redisClient } from '../index.js ';
 import { User } from "../models/user.model.js";
+import { isSessionActive } from '../config/generateToken.js';
 
 export const Auth = async(req, res, next) => {
     try {
@@ -19,11 +20,27 @@ export const Auth = async(req, res, next) => {
                 message:"token expired",
             });
         }
+
+        const sessionActive = await isSessionActive(
+            decodedData.id,
+            decodedData.sessionId
+        );
+
+        if(!sessionActive){
+            res.clearCookie("refreshToken");
+            res.clearCookie("accessToken");
+            res.clearCookie("csrfToken");
+
+            return res.status(401).json({
+            message: "Session Expired. You have been logged in from another device",
+            });
+        }
         
         const cacheUser = await redisClient.get(`user:${decodedData.id}`);
 
         if(cacheUser){
             req.user = JSON.parse(cacheUser);
+            req.sessionId = decodedData.sessionId;
             return next();
         }
 
@@ -45,4 +62,15 @@ export const Auth = async(req, res, next) => {
             message: error.message,
         })
     }
+}
+export const authorizedAdmin = async( req, res, next) => {
+    const user = req.user;
+
+    if(user.role!== "admin"){
+        return res.status(401).json({
+            message: "You are not allowed for this acitvity",
+        })
+    }
+
+    next();
 }

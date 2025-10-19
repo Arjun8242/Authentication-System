@@ -75,7 +75,7 @@ export const signupUser = TryCatch(async (req, res) => {
     await redisClient.set(rateLimitKey, "true", {EX : 60});
 
     res.json({
-        message: "If your email is vald, a verification link has been sent. It will expire in 5 minutes",
+        message: "If your email is valid, a verification link has been sent. It will expire in 5 minutes",
     });
 });
 
@@ -233,6 +233,11 @@ export const verifyOtp = TryCatch(async(req, res) => {
     return res.status(200).json({
         message: `Welcome ${user.name}`,
         user,
+        sessionInfo: {
+        sessionId: tokenData.sessionId,
+        loginTime: new Date().toISOString(),
+        csrfToken: tokenData.csrfToken,
+        }
     })
 })
 
@@ -240,7 +245,22 @@ export const myProfile = TryCatch(async(req, res) => {
     
     const user = req.user;
 
-    res.json({user});
+    const sessionId = req.sessionId;
+
+    const sessionData = await redisClient.get(`session:${sessionId}`);
+
+    let sessionInfo = null;
+
+    if(sessionData){
+        const parsedSession = JSON.parse(sessionData);
+        sessionInfo = {
+            sessionId,
+            loginTime: parsedSession.createdAt,
+            lastActivity: parsedSession.lastActivity
+        }
+    }
+
+    res.json({user, sessionInfo});
 })
 
 export const refreshToken = TryCatch(async(req, res) => {
@@ -259,7 +279,7 @@ export const refreshToken = TryCatch(async(req, res) => {
         })
     }
 
-    generateAccessToken(decode.id, res);
+    generateAccessToken(decode.id, decode.sessionId, res);
 
     return res.status(200).json({
         message: "token refreshed",
@@ -293,4 +313,10 @@ export const refreshCSRF = TryCatch(async(req, res) => {
         csrfToken : newCSRFToken,
     })
 })
+
+export const adminController = TryCatch(async(req, res) => {
+    return res.json({
+        message: "Hello Admin, how are you?"
+    });
+});
 
