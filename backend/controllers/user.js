@@ -320,3 +320,80 @@ export const adminController = TryCatch(async(req, res) => {
     });
 });
 
+
+export const forgotPassword = TryCatch(async (req, res) => {
+    const { email } = req.body;
+
+    if (!email) {
+        return res.status(400).json({
+            message: "Please provide an email address",
+        });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found",
+        });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetKey = `reset:${resetToken}`;
+
+    await redisClient.set(resetKey, user.email, { EX: 300 });
+
+    const subject = "Password Reset Request";
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+    const html = `<p>Please click this link to reset your password: <a href="${resetUrl}">${resetUrl}</a></p>`;
+
+    await sendMail({ email, subject, html });
+
+    res.json({
+        message: "If your email is valid, a password reset link has been sent. It will expire in 5 minutes.",
+    });
+});
+
+export const resetPassword = TryCatch(async (req, res) => {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!token) {
+        return res.status(400).json({
+            message: "Reset token is required",
+        });
+    }
+
+    if (!password) {
+        return res.status(400).json({
+            message: "Please provide a new password",
+        });
+    }
+
+    const resetKey = `reset:${token}`;
+    const email = await redisClient.get(resetKey);
+
+    if (!email) {
+        return res.status(400).json({
+            message: "Invalid or expired reset token",
+        });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found",
+        });
+    }
+
+    const hashPassword = await bcrypt.hash(password, 15);
+    user.password = hashPassword;
+    await user.save();
+
+    await redisClient.del(resetKey);
+
+    res.json({
+        message: "Password has been reset successfully.",
+    });
+});

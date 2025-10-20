@@ -9,6 +9,8 @@ import Loading from './Loading';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Verify from './pages/verify';
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 
 const App = () => {
@@ -26,6 +28,8 @@ const App = () => {
       <Route path="/register" element={isAuth ? <Home /> : <Register />} />
       <Route path="/dashboard" element={isAuth ? <Dashboard /> : <Login />} />
       <Route path="/token/:token" element={isAuth ? <Home /> : <Verify/>} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
     </Routes>
     <ToastContainer />
     </BrowserRouter>

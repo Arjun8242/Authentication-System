@@ -1,5 +1,5 @@
 import express from "express"
-import { adminController, loginUser, logoutUser, myProfile, refreshCSRF, refreshToken, signupUser, verifyOtp, verifyUser } from "../controllers/user.js";
+import { adminController, forgotPassword, loginUser, logoutUser, myProfile, refreshCSRF, refreshToken, resetPassword, signupUser, verifyOtp, verifyUser } from "../controllers/user.js";
 import { Auth, authorizedAdmin } from "../middleware/auth.js";
 import {verifyCSRFToken} from "../config/csrfMiddleware.js"
 
@@ -9,6 +9,8 @@ router.post("/register", signupUser);
 router.post("/verify/:token", verifyUser);
 router.post("/login", loginUser);
 router.post("/verify", verifyOtp);
+router.post("/user/forgot-password", forgotPassword);
+router.post("/user/reset-password/:token", resetPassword);
 router.get("/me", Auth, myProfile);
 router.post("/refresh", refreshToken);
 router.post("/logout", Auth, verifyCSRFToken, logoutUser);
