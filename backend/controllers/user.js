@@ -11,6 +11,7 @@ import { getOtpHtml, getVerifyEmailHtml } from "../config/html.js";
 import sendMail from "../config/sendmail.js";
 import { generateAccessToken, generateToken, revokeRefreshToken, verifyRefreshToken } from "../config/generateToken.js";
 import { generateCSRFToken } from "../config/csrfMiddleware.js";
+import { de } from "zod/v4/locales";
 
 export const signupUser = TryCatch(async (req, res) => {
     
@@ -319,6 +320,7 @@ export const myProfile = TryCatch(async(req, res) => {
 
 export const refreshToken = TryCatch(async(req, res) => {
     const refreshToken = req.cookies.refreshToken;
+    console.log("refreshToken", refreshToken);
 
     if(!refreshToken){
         return res.status(401).json({
@@ -326,6 +328,7 @@ export const refreshToken = TryCatch(async(req, res) => {
         })
     }
     const decode = await verifyRefreshToken(refreshToken)
+        console.log("decode", decode);
 
     if(!decode){
         return res.status(401).json({

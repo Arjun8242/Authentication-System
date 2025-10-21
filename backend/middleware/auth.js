@@ -8,7 +8,7 @@ export const Auth = async(req, res, next) => {
         const token = req.cookies.accessToken;
 
         if(!token){
-            return res.status(400).json({
+            return res.status(401).json({
                 message: "Please Login - no token?"
             });
         }
@@ -31,6 +31,8 @@ export const Auth = async(req, res, next) => {
             res.clearCookie("accessToken");
             res.clearCookie("csrfToken");
 
+            console.log(sessionActive);
+            
             return res.status(401).json({
             message: "Session Expired. You have been logged in from another device",
             });

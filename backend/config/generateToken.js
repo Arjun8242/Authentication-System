@@ -49,7 +49,7 @@ export const generateToken = async(id, res) => {
         maxAge: 7*24*60*60*1000,
         httpOnly: true,
         sameSite: "none",
-        // secure: true,
+        secure: true,
     });
 
     const csrfToken = await generateCSRFToken(id, res);
@@ -67,7 +67,7 @@ export const verifyRefreshToken = async(refreshToken) => {
             return null;
         }
 
-        const activeSessionId = await redisClient.get(`active_session:${decode.id}`);
+        const activeSessionId = await redisClient.get(`active_session:${decode.sessionId}`);
 
         if(activeSessionId !== decode.sessionId){
             return null;
@@ -117,6 +117,6 @@ export const revokeRefreshToken = async(userId) => {
 }
 
 export const isSessionActive = async(userId, sessionId) => {
-    const activeSessionId = await redisClient.get(`active_session:${userId}`);
+    const activeSessionId = await redisClient.get(`active_session:${sessionId}`);
     return activeSessionId === sessionId;
 };  
