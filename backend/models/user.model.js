@@ -1,6 +1,15 @@
 import mongoose from "mongoose";
 
-const schema = new mongoose.Schema(
+const deviceSchema = new mongoose.Schema({
+  ip: String,
+  browser: String,
+  os: String,
+  platform: String,
+  location: String,
+  loggedAt: Date,
+});
+
+const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
@@ -26,8 +35,9 @@ const schema = new mongoose.Schema(
     //   enum: ["user", "admin"],
       default: "user",
     },
+    devices: [deviceSchema],
   },
   { timestamps: true }
 );
 
-export const User = mongoose.model("User", schema);
+export const User = mongoose.model("User", userSchema);

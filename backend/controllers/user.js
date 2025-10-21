@@ -1,4 +1,6 @@
-import TryCatch from "../middleware/TryCatch.js"
+import TryCatch from "../middleware/TryCatch.js";
+import * as UA from "ua-parser-js";
+import geoip from "geoip-lite";
 import sanitize from "mongo-sanitize";
 import { loginSchema, signupSchema } from "../config/zodvalidation.js"
 import { redisClient } from "../index.js";
@@ -192,9 +194,61 @@ export const loginUser = TryCatch(async(req, res) => {
     const html=  getOtpHtml({ email, otp});
 
     await sendMail({ email, subject, html});
+    const ip =
+        req.headers["x-forwarded-for"]?.split(",")[0] ||
+        req.connection?.remoteAddress ||
+        req.socket?.remoteAddress ||
+        "Unknown";
+        
+        const UAParser = UA.UAParser; 
+        const parser = new UAParser(req.headers["user-agent"]);
+        const result = parser.getResult();
+
+        const deviceInfo = {
+            ip,
+            browser: result.browser.name+ " " + result.browser.version,
+             os: result.os.name + " " + result.os.version,
+            device:
+                result.device.vendor && result.device.model
+                ? `${result.device.vendor} ${result.device.model}`
+                : "Desktop",
+            loggedAt: new Date(),
+        }
+
+        const geo = geoip.lookup(ip);
+        if (geo) {
+        deviceInfo.location = `${geo.city || "Unknown"}, ${geo.country || ""}`;
+        } else {
+        deviceInfo.location = "Unknown";
+        }
+
+         const alreadyExists = user.devices.some(
+      (d) => d.ip === ip && d.browser === deviceInfo.browser
+    );
+
+    if (!alreadyExists) {
+      user.devices.push(deviceInfo);
+
+      await user.save();
+
+      await sendMail({
+        email: user.email,
+        subject: "🔐 New Device Login Detected",
+        html: `
+          <h3>New login detected on your account</h3>
+          <p><strong>Device:</strong> ${deviceInfo.device}</p>
+          <p><strong>Browser:</strong> ${deviceInfo.browser}</p>
+          <p><strong>OS:</strong> ${deviceInfo.os}</p>
+          <p><strong>IP:</strong> ${ip}</p>
+          <p><strong>Location:</strong> ${deviceInfo.location}</p>
+          <p>If this wasn’t you, please change your password immediately.</p>
+        `,
+        });
+
+    }
     
     return res.json({
-        message: "if your email is vali, and otp has been sent. It will be valid for only 5 mins"
+        message: "if your email is valid, and otp has been sent. It will be valid for only 5 mins"
     });
 });
 
@@ -268,7 +322,7 @@ export const refreshToken = TryCatch(async(req, res) => {
 
     if(!refreshToken){
         return res.status(401).json({
-            message:"invalid refresh token",
+            message:"invalids refresh token",
         })
     }
     const decode = await verifyRefreshToken(refreshToken)
@@ -356,7 +410,7 @@ export const forgotPassword = TryCatch(async (req, res) => {
 
 export const resetPassword = TryCatch(async (req, res) => {
     const { token } = req.params;
-    const { password } = req.body;
+    const { password, email,subject, html } = req.body;
 
     if (!token) {
         return res.status(400).json({
@@ -371,15 +425,15 @@ export const resetPassword = TryCatch(async (req, res) => {
     }
 
     const resetKey = `reset:${token}`;
-    const email = await redisClient.get(resetKey);
+    const storedEmail = await redisClient.get(resetKey);
 
-    if (!email) {
+    if (!storedEmail) {
         return res.status(400).json({
             message: "Invalid or expired reset token",
         });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email:storedEmail });
 
     if (!user) {
         return res.status(404).json({
@@ -392,6 +446,19 @@ export const resetPassword = TryCatch(async (req, res) => {
     await user.save();
 
     await redisClient.del(resetKey);
+
+     const mailData = {
+    email: email || user.email,
+    subject: subject || "Password Changed Successfully 🔐",
+    html:
+      html ||
+      `
+        <h2>Your password was recently changed</h2>
+        <p>If this was not you, please reset your password immediately.</p>
+      `,
+  };
+
+  await sendMail(mailData);
 
     res.json({
         message: "Password has been reset successfully.",
