@@ -1,0 +1,1076 @@
+┌─────────────────┐
+│ Client Starts   │
+│ App.jsx Loads   │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ Check isAuth    │
+│ from Context?   │
+└─────────┬───────┘
+          │
+     ┌────▼────┐
+     │   YES   │ ──► ┌─────────────┐
+     └─────────┘     │ Home/       │
+                     │ Dashboard   │
+                     └─────────────┘
+          │
+          v
+     ┌────▼────┐
+     │   NO    │ ──► ┌─────────────┐
+     └─────────┘     │ Login Page  │
+                     └──────┬──────┘
+                            │
+                            v
+                  ┌─────────────────┐
+                  │ POST /api/v1/   │
+                  │ login           │
+                  └─────────┬───────┘
+                            │
+                            v
+                  ┌─────────────────┐
+                  │ Validate Input  │
+                  │ with Zod        │
+                  └─────────┬───────┘
+                            │
+                            v
+                  ┌─────────────────┐
+                  │ Check Rate      │
+                  │ Limit (redis:   │
+                  │ login-attempts) │
+                  └─────────┬───────┘
+                            │
+                   ┌────────▼────────┐
+                   │     OK          │ ──► ┌─────────────┐
+                   └─────────────────┘     │ Find User   │
+                                           │ by Email    │
+                                           └──────┬──────┘
+                                                  │
+                                         ┌────────▼────────┐
+                                         │   User Found    │ ──► ┌─────────────┐
+                                         └─────────────────┘     │ Bcrypt      │
+                                                                 │ Compare     │
+                                                                 │ Password    │
+                                                                 └──────┬──────┘
+                                                                        │
+                                                               ┌────────▼────────┐
+                                                               │ Password OK     │ ──► ┌─────────────┐
+                                                               └─────────────────┘     │ Generate    │
+                                                                                       │ OTP 5-digit │
+                                                                                       └──────┬──────┘
+                                                                                              │
+                                                                                              v
+                                                                                     ┌─────────────────┐
+                                                                                     │ Store OTP in    │
+                                                                                     │ Redis (EX:300s) │
+                                                                                     │ key:otp{email}  │
+                                                                                     └─────────┬───────┘
+                                                                                               │
+                                                                                               v
+                                                                                     ┌─────────────────┐
+                                                                                     │ Send OTP Email  │
+                                                                                     └─────────┬───────┘
+                                                                                               │
+                                                                                               v
+                                                                                     ┌─────────────────┐
+                                                                                     │ Track Device    │
+                                                                                     │ Info (IP,       │
+                                                                                     │ Browser, OS,    │
+                                                                                     │ Geo)            │
+                                                                                     └─────────┬───────┘
+                                                                                               │
+                                                                                               v
+                                                                                     ┌─────────────────┐
+                                                                                     │ Is New Device?  │
+                                                                                     └─────────┬───────┘
+                                                                                               │
+                                                                                      ┌────────▼────────┐
+                                                                                      │      YES        │ ──► ┌─────────────┐
+                                                                                      └─────────────────┘     │ Add to      │
+                                                                                                              │ User.devices│
+                                                                                                              │ Send Security│
+                                                                                                              │ Email        │
+                                                                                                              └──────┬──────┘
+                                                                                                                     │
+                                                                                                                     v
+                                                                                                            ┌─────────────────┐
+                                                                                                            │ Is New Device?  │
+                                                                                                            │      NO         │
+                                                                                                            └─────────────────┘
+                                                                                                                     │
+                                                                                                                     v
+                                                                                                            ┌─────────────────┐
+                                                                                                            │ Response: OTP  │
+                                                                                                            │ Sent (5min     │
+                                                                                                            │ expiry)        │
+                                                                                                            └─────────────────┘
+                                                                                                                     │
+                                                                                                                     v
+                                                                                                            ┌─────────────────┐
+                                                                                                            │ VerifyOtp.jsx  │
+                                                                                                            └─────────┬──────┘
+                                                                                                              │
+                                                                                                              v
+┌─────────────────┐
+│ POST /api/v1/    │
+│ verify           │
+└─────────┬───────┘
+                                                                                                                   │
+                                                                                                                   v
+┌─────────────────┐
+│ Get OTP from     │
+│ Redis            │
+│ key:otp{email}   │
+└─────────┬───────┘
+        │
+┌────────▼────────┐
+│   OTP Found     │ ──► ┌─────────────┐
+└─────────────────┘     │ OTP Matches?   │
+                                                                                                                           └──────┬───────┘
+                                                                                                                                  │
+                                                                                                                         ┌────────▼────────┐
+                                                                                                                         │     YES        │ ──► ┌─────────────┐
+                                                                                                                         └─────────────────┘     │ Delete OTP    │
+                                                                                                                                                 │ from Redis     │
+                                                                                                                                                 └──────┬───────┘
+                                                                                                                                                        │
+                                                                                                                                                        v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ generateToken    │
+                                                                                                                       │ (user._id)      │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Create Session   │
+                                                                                                                       │ ID (16 bytes)    │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Create JWT       │
+                                                                                                                       │ Access Token     │
+                                                                                                                       │ (15m)            │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Create JWT       │
+                                                                                                                       │ Refresh Token    │
+                                                                                                                       │ (7d)             │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Store Refresh    │
+                                                                                                                       │ Token in Redis   │
+                                                                                                                       │ EX:7d            │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Store Active     │
+                                                                                                                       │ Session in Redis │
+                                                                                                                       │ EX:7d            │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Store Session    │
+                                                                                                                       │ Data in Redis    │
+                                                                                                                       │ EX:7d            │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Generate CSRF    │
+                                                                                                                       │ Token (32 bytes) │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Store CSRF       │
+                                                                                                                       │ Token in Redis   │
+                                                                                                                       │ EX:1h            │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Set Cookies:     │
+                                                                                                                       │ accessToken      │
+                                                                                                                       │ refreshToken     │
+                                                                                                                       │ csrfToken        │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Response: Welcome│
+                                                                                                                       │ + user +         │
+                                                                                                                       │ sessionInfo      │
+                                                                                                                       └─────────────────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Context:         │
+                                                                                                                       │ setIsAuth(true)  │
+                                                                                                                       │ setUser(user)    │
+                                                                                                                       └─────────┬───────┘
+                                                                                                                                 │
+                                                                                                                                 v
+                                                                                                                       ┌─────────────────┐
+                                                                                                                       │ Navigate to '/'  │
+                                                                                                                       └─────────────────┘
+
+
+
+
+
+┌─────────────────┐
+│ Register.jsx    │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ POST /api/v1/   │
+│ register        │
+│ (name, email,   │
+│ password)       │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ Validate Input  │
+│ with Zod        │
+│ signupSchema    │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ Check Rate      │
+│ Limit (redis:   │
+│ register-rate-  │
+│ limit:IP:email) │
+└─────────┬───────┘
+          │
+ ┌────────▼────────┐
+ │      OK         │ ──► ┌─────────────┐
+ └─────────────────┘     │ Check User  │
+                         │ Exists      │
+                         │ User.findOne│
+                         │ ({email})   │
+                         └──────┬──────┘
+                                │
+                       ┌────────▼────────┐
+                       │  User Not       │ ──► ┌─────────────┐
+                       │  Exists         │     │ Bcrypt Hash │
+                       └─────────────────┘     │ Password    │
+                                               │ bcrypt.hash │
+                                               │ (password,15)│
+                                               └──────┬──────┘
+                                                      │
+                                                      v
+                                            ┌─────────────────┐
+                                            │ Generate Verify │
+                                            │ Token (32 bytes)│
+                                            │ crypto.random   │
+                                            │ Bytes(32).toString('hex')│
+                                            └─────────┬───────┘
+                                                      │
+                                                      v
+                                            ┌─────────────────┐
+                                            │ Store User Data │
+                                            │ in Redis        │
+                                            │ key:verify:{token}│
+                                            │ EX:300           │
+                                            │ {name,email,password}│
+                                            └─────────┬───────┘
+                                                      │
+                                                      v
+                                            ┌─────────────────┐
+                                            │ Send Verify     │
+                                            │ Email           │
+                                            │ getVerifyEmailHtml│
+                                            │ + sendMail      │
+                                            └─────────┬───────┘
+                                                      │
+                                                      v
+                                            ┌─────────────────┐
+                                            │ Response: Check │
+                                            │ Email (5min     │
+                                            │ expiry)         │
+                                            └─────────────────┘
+                                                      │
+                                                      v
+                                            ┌─────────────────┐
+                                            │ User Clicks     │
+                                            │ Email Link      │
+                                            │ /token/:token   │
+                                            └─────────┬───────┘
+                                                      │
+                                                      v
+                                            ┌─────────────────┐
+                                            │ POST /api/v1/   │
+                                            │ verify/:token   │
+                                            └─────────┬───────┘
+                                                      │
+                                                      v
+                                            ┌─────────────────┐
+                                            │ Get Data from   │
+                                            │ Redis           │
+                                            │ key:verify:{token}│
+                                            └─────────┬───────┘
+                                                      │
+                                             ┌────────▼────────┐
+                                             │   Data Found    │ ──► ┌─────────────┐
+                                             └─────────────────┘     │ Delete from │
+                                                                     │ Redis        │
+                                                                     └──────┬──────┘
+                                                                            │
+                                                                            v
+                                                                  ┌─────────────────┐
+                                                                  │ Check User      │
+                                                                  │ Still Not       │
+                                                                  │ Exists          │
+                                                                  │ User.findOne    │
+                                                                  │ ({email})       │
+                                                                  └─────────┬──────┘
+                                                                            │
+                                                                   ┌────────▼────────┐
+                                                                   │  User Not       │ ──► ┌─────────────┐
+                                                                   │  Exists         │     │ Create User  │
+                                                                   └─────────────────┘     │ in DB         │
+                                                                                          │ User.create    │
+                                                                                          │ ({name,email, │
+                                                                                          │ password})     │
+                                                                                          └──────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Response:       │
+                                                                                        │ Account Created │
+                                                                                        │ + user data     │
+                                                                                        └─────────────────┘
+
+
+
+┌─────────────────┐
+│ ForgotPassword. │
+│ jsx             │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ POST /api/v1/   │
+│ user/forgot-    │
+│ password        │
+│ (email)         │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ Find User by    │
+│ Email           │
+│ User.findOne    │
+│ ({email})       │
+└─────────┬───────┘
+          │
+ ┌────────▼────────┐
+ │   User Found    │ ──► ┌─────────────┐
+ └─────────────────┘     │ Generate     │
+                         │ Reset Token  │
+                         │ (32 bytes)   │
+                         └──────┬──────┘
+                                │
+                                v
+                      ┌─────────────────┐
+                      │ Store Email in  │
+                      │ Redis           │
+                      │ key:reset:{token}│
+                      │ EX:300          │
+                      └─────────┬───────┘
+                                │
+                                v
+                      ┌─────────────────┐
+                      │ Send Reset      │
+                      │ Email with Link │
+                      │ sendMail        │
+                      └─────────┬───────┘
+                                │
+                                v
+                      ┌─────────────────┐
+                      │ Response: Check │
+                      │ Email (5min)    │
+                      └─────────────────┘
+                                │
+                                v
+                      ┌─────────────────┐
+                      │ User Clicks     │
+                      │ Reset Link      │
+                      │ /reset-password/│
+                      │ :token          │
+                      └─────────┬───────┘
+                                │
+                                v
+                      ┌─────────────────┐
+                      │ ResetPassword. │
+                      │ jsx             │
+                      └─────────┬───────┘
+                                │
+                                v
+                      ┌─────────────────┐
+                      │ POST /api/v1/   │
+                      │ user/reset-     │
+                      │ password/:token │
+                      │ (password)      │
+                      └─────────┬───────┘
+                                │
+                                v
+                      ┌─────────────────┐
+                      │ Get Email from  │
+                      │ Redis           │
+                      │ key:reset:{token}│
+                      └─────────┬───────┘
+                                │
+                       ┌────────▼────────┐
+                       │   Email Found   │ ──► ┌─────────────┐
+                       └─────────────────┘     │ Find User by │
+                                               │ Email         │
+                                               │ User.findOne  │
+                                               │ ({email})     │
+                                               └──────┬──────┘
+                                                      │
+                                             ┌────────▼────────┐
+                                             │   User Found    │ ──► ┌─────────────┐
+                                             └─────────────────┘     │ Bcrypt Hash │
+                                                                     │ New Password │
+                                                                     │ bcrypt.hash  │
+                                                                     │ (password,15)│
+                                                                     └──────┬──────┘
+                                                                            │
+                                                                            v
+                                                                  ┌─────────────────┐
+                                                                  │ Update User     │
+                                                                  │ Password        │
+                                                                  │ user.password = │
+                                                                  │ hash            │
+                                                                  │ user.save()     │
+                                                                  └─────────┬──────┘
+                                                                            │
+                                                                            v
+                                                                  ┌─────────────────┐
+                                                                  │ Delete Reset    │
+                                                                  │ Token from      │
+                                                                  │ Redis           │
+                                                                  └─────────┬──────┘
+                                                                            │
+                                                                            v
+                                                                  ┌─────────────────┐
+                                                                  │ Send Password   │
+                                                                  │ Changed Email   │
+                                                                  │ sendMail        │
+                                                                  └─────────┬──────┘
+                                                                            │
+                                                                            v
+                                                                  ┌─────────────────┐
+                                                                  │ Response:       │
+                                                                  │ Password Reset  │
+                                                                  └─────────────────┘
+
+
+┌─────────────────┐
+│ Dashboard/Home  │
+│ Page Loads      │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ GET /api/v1/me  │
+│ with Auth       │
+│ middleware      │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ Auth Middleware │
+│ Checks Cookies  │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ Check access    │
+│ Token Cookie    │
+└─────────┬───────┘
+          │
+ ┌────────▼────────┐
+ │  Token Exists   │ ──► ┌─────────────┐
+ └─────────────────┘     │ JWT Verify    │
+                         │ process.env.  │
+                         │ JWT_SECRET    │
+                         └──────┬──────┘
+                                │
+                       ┌────────▼────────┐
+                       │   Valid Token   │ ──► ┌─────────────┐
+                       └─────────────────┘     │ Extract      │
+                                               │ sessionId    │
+                                               └──────┬──────┘
+                                                      │
+                                                      v
+                                            ┌─────────────────┐
+                                            │ Check Session   │
+                                            │ Active          │
+                                            │ redis:active_   │
+                                            │ session:{sessionId}│
+                                            │ === sessionId   │
+                                            └─────────┬───────┘
+                                                      │
+                                             ┌────────▼────────┐
+                                             │ Session Active  │ ──► ┌─────────────┐
+                                             └─────────────────┘     │ Get User from│
+                                                                     │ Cache         │
+                                                                     │ redis:user:{id}│
+                                                                     └──────┬──────┘
+                                                                            │
+                                                                   ┌────────▼────────┐
+                                                                   │  User Cached    │ ──► ┌─────────────┐
+                                                                   └─────────────────┘     │ Attach to req│
+                                                                                          │ req.user = user│
+                                                                                          └──────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Get Session Info│
+                                                                                        │ redis:session:  │
+                                                                                        │ {sessionId}     │
+                                                                                        └─────────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Return {user,   │
+                                                                                        │ sessionInfo}    │
+                                                                                        └─────────────────┘
+
+┌─────────────────┐
+│ Admin Route     │
+│ GET /api/v1/    │
+│ admin           │
+│ Auth +          │
+│ authorizedAdmin │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ Check User Role │
+│ req.user.role   │
+│ === 'admin'     │
+└─────────┬───────┘
+          │
+ ┌────────▼────────┐
+ │    Is Admin     │ ──► ┌─────────────┐
+ └─────────────────┘     │ Response:     │
+                         │ Hello Admin   │
+                         └───────────────┘
+
+
+
+┌─────────────────┐
+│ Logout Button   │
+│ (Dashboard.jsx) │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ POST /api/v1/   │
+│ logout          │
+│ with Auth +     │
+│ verifyCSRF      │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ verifyCSRF      │
+│ Middleware      │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ Check Request   │
+│ Method === GET? │
+└─────────┬───────┘
+          │
+ ┌────────▼────────┐
+ │     YES         │ ──► ┌─────────────┐
+ └─────────────────┘     │ Skip CSRF     │
+                         │ Check         │
+                         └──────┬───────┘
+                                │
+                                v
+                       ┌─────────────────┐
+                       │ Check Request   │
+                       │ Method === GET? │
+                       │     NO          │
+                       └─────────────────┘
+                                │
+                                v
+                       ┌─────────────────┐
+                       │ Get CSRF Token  │
+                       │ from Headers    │
+                       │ x-csrf-token || │
+                       │ x-xsrf-token || │
+                       │ csrf-token      │
+                       └─────────┬───────┘
+                                │
+                       ┌────────▼────────┐
+                       │ Token Found     │ ──► ┌─────────────┐
+                       └─────────────────┘     │ Get Stored    │
+                                               │ Token         │
+                                               │ redis:csrf:   │
+                                               │ {userId}      │
+                                               └──────┬──────┘
+                                                      │
+                                             ┌────────▼────────┐
+                                             │ Stored Token    │ ──► ┌─────────────┐
+                                             │ Exists          │     │ Compare      │
+                                             └─────────────────┘     │ Tokens       │
+                                                                     └──────┬──────┘
+                                                                            │
+                                                                   ┌────────▼────────┐
+                                                                   │ Tokens Match    │ ──► ┌─────────────┐
+                                                                   └─────────────────┘     │ Proceed to    │
+                                                                                          │ Logout        │
+                                                                                          └──────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ revokeRefresh   │
+                                                                                        │ Token(userId)   │
+                                                                                        └─────────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Delete redis:   │
+                                                                                        │ refresh_token:  │
+                                                                                        │ {userId}        │
+                                                                                        └─────────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Delete redis:   │
+                                                                                        │ active_session: │
+                                                                                        │ {userId}        │
+                                                                                        └─────────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Get active      │
+                                                                                        │ SessionId       │
+                                                                                        └─────────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Delete redis:   │
+                                                                                        │ session:{active │
+                                                                                        │ SessionId}      │
+                                                                                        └─────────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ revokeCSRF      │
+                                                                                        │ Token(userId)   │
+                                                                                        └─────────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Delete redis:   │
+                                                                                        │ csrf:{userId}   │
+                                                                                        └─────────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Clear Cookies   │
+                                                                                        │ accessToken     │
+                                                                                        │ refreshToken    │
+                                                                                        │ csrfToken       │
+                                                                                        └─────────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Delete redis:   │
+                                                                                        │ user:{userId}   │
+                                                                                        └─────────┬──────┘
+                                                                                                 │
+                                                                                                 v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Response:       │
+                                                                                        │ Logged Out      │
+                                                                                        └─────────────────┘
+
+
+
+
+┌─────────────────┐
+│ Any API Call    │
+│ Returns 401     │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ apiInterceptor  │
+│ Catches 401     │
+│ !originalRequest│
+│ ._retry         │
+└─────────┬───────┘
+          │
+          v
+┌─────────────────┐
+│ Check if        │
+│ Refreshing      │
+│ Access Token?   │
+│ isRefreshing    │
+│ AccessToken     │
+└─────────┬───────┘
+          │
+ ┌────────▼────────┐
+ │     YES         │ ──► ┌─────────────┐
+ └─────────────────┘     │ Add to Queue  │
+                         │ accessToken   │
+                         │ FailedQueue   │
+                         └───────────────┘
+          │
+          v
+ ┌────────▼────────┐
+ │      NO         │ ──► ┌─────────────┐
+ └─────────────────┘     │ POST /api/v1/ │
+                         │ refresh       │
+                         └──────┬──────┘
+                                │
+                                v
+                      ┌─────────────────┐
+                      │ Get refresh     │
+                      │ Token from      │
+                      │ Cookie          │
+                      └─────────┬───────┘
+                                │
+                       ┌────────▼────────┐
+                       │ Token Exists    │ ──► ┌─────────────┐
+                       └─────────────────┘     │ verifyRefresh│
+                                               │ Token(refresh│
+                                               │ Token)        │
+                                               └──────┬──────┘
+                                                      │
+                                                      v
+                                            ┌─────────────────┐
+                                            │ JWT.verify      │
+                                            │ (refreshToken,  │
+                                            │ REFRESH_SECRET) │
+                                            └─────────┬──────┘
+                                                      │
+                                             ┌────────▼────────┐
+                                             │   Valid JWT     │ ──► ┌─────────────┐
+                                             └─────────────────┘     │ Check Stored │
+                                                                     │ Refresh Token │
+                                                                     │ redis:refresh_│
+                                                                     │ token:{id}    │
+                                                                     └──────┬──────┘
+                                                                            │
+                                                                   ┌────────▼────────┐
+                                                                   │ Tokens Match    │ ──► ┌─────────────┐
+                                                                   └─────────────────┘     │ Check Active │
+                                                                                          │ Session       │
+                                                                                          │ redis:active_ │
+                                                                                          │ session:{sessionId}│
+                                                                                          └──────┬──────┘
+                                                                                                 │
+                                                                                        ┌────────▼────────┐
+                                                                                        │ Session Active  │ ──► ┌─────────────┐
+                                                                                        └─────────────────┘     │ Check Session│
+                                                                                                                │ Data Exists  │
+                                                                                                                │ redis:session:│
+                                                                                                                │ {sessionId}  │
+                                                                                                                └──────┬──────┘
+                                                                                                                       │
+                                                                                                              ┌────────▼────────┐
+                                                                                                              │ Data Exists     │ ──► ┌─────────────┐
+                                                                                                              └─────────────────┘     │ Update        │
+                                                                                                                                      │ lastActivity   │
+                                                                                                                                      │ redis:session: │
+                                                                                                                                      │ {sessionId}    │
+                                                                                                                                      └──────┬──────┘
+                                                                                                                                             │
+                                                                                                                                             v
+                                                                                                                           ┌─────────────────┐
+                                                                                                                           │ generateAccess  │
+                                                                                                                           │ Token(id,       │
+                                                                                                                           │ sessionId)      │
+                                                                                                                           └─────────┬──────┘
+                                                                                                                                      │
+                                                                                                                                      v
+                                                                                                                           ┌─────────────────┐
+                                                                                                                           │ Create New      │
+                                                                                                                           │ Access JWT      │
+                                                                                                                           │ (15m)           │
+                                                                                                                           └─────────┬──────┘
+                                                                                                                                      │
+                                                                                                                                      v
+                                                                                                                           ┌─────────────────┐
+                                                                                                                           │ Set access      │
+                                                                                                                           │ Token Cookie    │
+                                                                                                                           └─────────┬──────┘
+                                                                                                                                      │
+                                                                                                                                      v
+                                                                                                                           ┌─────────────────┐
+                                                                                                                           │ Response: Token │
+                                                                                                                           │ Refreshed       │
+                                                                                                                           └─────────────────┘
+                                                                                                                                      │
+                                                                                                                                      v
+                                                                                                                           ┌─────────────────┐
+                                                                                                                           │ Process Queue   │
+                                                                                                                           │ accessToken     │
+                                                                                                                           │ FailedQueue     │
+                                                                                                                           └─────────┬──────┘
+                                                                                                                                      │
+                                                                                                                                      v
+                                                                                                                           ┌─────────────────┐
+                                                                                                                           │ Retry Original  │
+                                                                                                                           │ Requests        │
+                                                                                                                           └─────────────────┘
+
+
+
+
+                                                                    ┌─────────────────┐
+                                                                    │ Any API Call    │
+                                                                    │ Returns 403     │
+                                                                    │ CSRF Error      │
+                                                                    │ code.startsWith │
+                                                                    │ ('CSRF_')       │
+                                                                    └─────────┬───────┘
+                                                                            │
+                                                                            v
+                                                                    ┌─────────────────┐
+                                                                    │ apiInterceptor  │
+                                                                    │ Catches 403     │
+                                                                    │ !originalRequest│
+                                                                    │ ._retryCsrf     │
+                                                                    └─────────┬───────┘
+                                                                            │
+                                                                            v
+                                                                    ┌─────────────────┐
+                                                                    │ Check if        │
+                                                                    │ Refreshing CSRF │
+                                                                    │ isRefreshingCSRF│
+                                                                    └─────────┬───────┘
+                                                                            │
+                                                                    ┌────────▼────────┐
+                                                                    │     YES         │ ──► ┌─────────────┐
+                                                                    └─────────────────┘     │ Add to Queue  │
+                                                                                            │ csrfFailed    │
+                                                                                            │ Queue         │
+                                                                                            └───────────────┘
+                                                                            │
+                                                                            v
+                                                                    ┌────────▼────────┐
+                                                                    │      NO         │ ──► ┌─────────────┐
+                                                                    └─────────────────┘     │ POST /api/v1/ │
+                                                                                            │ refresh-csrf  │
+                                                                                            │ with Auth     │
+                                                                                            └──────┬──────┘
+                                                                                                    │
+                                                                                                    v
+                                                                                        ┌─────────────────┐
+                                                                                        │ revokeCSRF      │
+                                                                                        │ Token(userId)   │
+                                                                                        └─────────┬───────┘
+                                                                                                    │
+                                                                                                    v
+                                                                                        ┌─────────────────┐
+                                                                                        │ generateCSRF    │
+                                                                                        │ Token(userId)   │
+                                                                                        └─────────┬───────┘
+                                                                                                    │
+                                                                                                    v
+                                                                                        ┌─────────────────┐
+                                                                                        │ New CSRF Token  │
+                                                                                        │ (32 bytes hex)  │
+                                                                                        └─────────┬───────┘
+                                                                                                    │
+                                                                                                    v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Store in Redis  │
+                                                                                        │ redis:csrf:     │
+                                                                                        │ {userId}        │
+                                                                                        │ EX:3600         │
+                                                                                        └─────────┬───────┘
+                                                                                                    │
+                                                                                                    v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Set csrf Token  │
+                                                                                        │ Cookie          │
+                                                                                        └─────────┬───────┘
+                                                                                                    │
+                                                                                                    v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Response: CSRF  │
+                                                                                        │ Refreshed +     │
+                                                                                        │ csrfToken       │
+                                                                                        └─────────────────┘
+                                                                                                    │
+                                                                                                    v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Process Queue   │
+                                                                                        │ csrfFailed      │
+                                                                                        │ Queue           │
+                                                                                        └─────────┬───────┘
+                                                                                                    │
+                                                                                                    v
+                                                                                        ┌─────────────────┐
+                                                                                        │ Retry Original  │
+                                                                                        │ Requests with   │
+                                                                                        │ new CSRF header │
+                                                                                        └─────────────────┘
+
+
+
+                                                            ┌─────────────────┐
+                                                            │ All Controller  │
+                                                            │ Functions       │
+                                                            └─────────┬───────┘
+                                                                    │
+                                                                    v
+                                                            ┌─────────────────┐
+                                                            │ TryCatch        │
+                                                            │ Middleware      │
+                                                            │ async (req, res,│
+                                                            │ next) => {      │
+                                                            │  try { ... }    │
+                                                            │  catch (error) {│
+                                                            │   return res.   │
+                                                            │   status(500).  │
+                                                            │   json({message:│
+                                                            │   error.message})│
+                                                            │  }              │
+                                                            │ }               │
+                                                            └─────────────────┘
+
+                                                            ┌─────────────────┐
+                                                            │ Zod Validation  │
+                                                            │ Errors          │
+                                                            └─────────┬───────┘
+                                                                    │
+                                                                    v
+                                                            ┌─────────────────┐
+                                                            │ Format Error    │
+                                                            │ Response        │
+                                                            │ const zodError =│
+                                                            │ validation.error│
+                                                            │ let allerrors = │
+                                                            │ zodError.issues │
+                                                            │ .map(...)       │
+                                                            │ return res.     │
+                                                            │ status(400).    │
+                                                            │ json({          │
+                                                            │  message:       │
+                                                            │  allerrors[0]?. │
+                                                            │  message,       │
+                                                            │  error: allerrors│
+                                                            │ })              │
+                                                            └─────────────────┘
+
+                                                            ┌─────────────────┐
+                                                            │ Rate Limiting   │
+                                                            │ Errors          │
+                                                            └─────────┬───────┘
+                                                                    │
+                                                                    v
+                                                            ┌─────────────────┐
+                                                            │ return res.     │
+                                                            │ status(429).    │
+                                                            │ json({          │
+                                                            │  message: 'too  │
+                                                            │  many request,  │
+                                                            │  slow down lil  │
+                                                            │  nigga'         │
+                                                            │ })              │
+                                                            └─────────────────┘
+
+                                                            ┌─────────────────┐
+                                                            │ Auth Failures   │
+                                                            └─────────┬───────┘
+                                                                    │
+                                                                    v
+                                                            ┌─────────────────┐
+                                                            │ 401 Responses   │
+                                                            │ 'Please Login - │
+                                                            │ no token?'      │
+                                                            │ OR              │
+                                                            │ 'Session Expired│
+                                                            │ You have been   │
+                                                            │ logged in from  │
+                                                            │ another device' │
+                                                            │ Clear all       │
+                                                            │ cookies         │
+                                                            └─────────────────┘
+
+                                                            ┌─────────────────┐
+                                                            │ CSRF Failures   │
+                                                            └─────────┬───────┘
+                                                                    │
+                                                                    v
+                                                            ┌─────────────────┐
+                                                            │ 403 Responses   │
+                                                            │ message: 'CSRF  │
+                                                            │ Token missing/  │
+                                                            │ expired/invalid'│
+                                                            │ code: 'CSRF_    │
+                                                            │ TOKEN_MISSING/  │
+                                                            │ EXPIRED/INVALID'│
+                                                            └─────────────────┘
+
+                                                            ┌─────────────────┐
+                                                            │ Database/Redis  │
+                                                            │ Errors          │
+                                                            └─────────┬───────┘
+                                                                    │
+                                                                    v
+                                                            ┌─────────────────┐
+                                                            │ Caught by       │
+                                                            │ TryCatch        │
+                                                            │ 500 Internal    │
+                                                            │ Server Error    │
+                                                            └─────────────────┘
+
+                                                            ┌─────────────────┐
+                                                            │ Email Send      │
+                                                            │ Failures        │
+                                                            └─────────┬───────┘
+                                                                    │
+                                                                    v
+                                                            ┌─────────────────┐
+                                                            │ TryCatch        │
+                                                            │ catches but     │
+                                                            │ continues       │
+                                                            │ execution       │
+                                                            │ No response     │
+                                                            │ interruption    │
+                                                            └─────────────────┘
+
+                                                            ┌─────────────────┐
+                                                            │ GeoIP Lookup    │
+                                                            │ Failures        │
+                                                            └─────────┬───────┘
+                                                                    │
+                                                                    v
+                                                            ┌─────────────────┐
+                                                            │ deviceInfo.     │
+                                                            │ location =      │
+                                                            │ 'Unknown'       │
+                                                            │ Continue        │
+                                                            │ gracefully      │
+                                                            └─────────────────┘
+
+
+Key Legend:
+- Rectangles: Processes/Functions
+- Diamonds: Decisions
+- Arrows: Flow direction
+- Text in boxes: Specific actions, Redis keys, expiry times, function calls, etc.

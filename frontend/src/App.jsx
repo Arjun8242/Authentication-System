@@ -17,9 +17,7 @@ const App = () => {
   const {isAuth ,loading} = AppData();
   return (
     <>
-    {loading? (
-      <Loading />
-    ) : (
+
     <BrowserRouter>
     <Routes>
       <Route path="/" element={isAuth? <Home />:<Login />}/>
@@ -33,7 +31,7 @@ const App = () => {
     </Routes>
     <ToastContainer />
     </BrowserRouter>
-    )}
+    
     </>
   )
 }
