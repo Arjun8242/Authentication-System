@@ -22,7 +22,7 @@ const App = () => {
     <Routes>
       <Route path="/" element={isAuth? <Home />:<Login />}/>
       <Route path="/login" element={isAuth? <Home />:<Login />}/>
-      <Route path="/verifyotp" element={<VerifyOtp />}/>
+      <Route path="/verifyotp" element={isAuth ? <Home /> : <VerifyOtp />}/>
       <Route path="/register" element={isAuth ? <Home /> : <Register />} />
       <Route path="/dashboard" element={isAuth ? <Dashboard /> : <Login />} />
       <Route path="/token/:token" element={isAuth ? <Home /> : <Verify/>} />
@@ -31,9 +31,11 @@ const App = () => {
     </Routes>
     <ToastContainer />
     </BrowserRouter>
-    
     </>
   )
 }
 
 export default App
+  {/* {loading ? (
+        <Loading />
+      ) : ( */}

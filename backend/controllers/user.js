@@ -11,7 +11,7 @@ import { getOtpHtml, getVerifyEmailHtml } from "../config/html.js";
 import sendMail from "../config/sendmail.js";
 import { generateAccessToken, generateToken, revokeRefreshToken, verifyRefreshToken } from "../config/generateToken.js";
 import { generateCSRFToken } from "../config/csrfMiddleware.js";
-import { de } from "zod/v4/locales";
+import { DeviceVendor } from "ua-parser-js/enums";
 
 export const signupUser = TryCatch(async (req, res) => {
     
@@ -387,6 +387,15 @@ export const forgotPassword = TryCatch(async (req, res) => {
         });
     }
 
+    const key = `login-attempts:${req.ip}:${email}`;
+    const attempts = await redisClient.incr(key);
+    if (attempts === 1) {
+    await redisClient.expire(key, 300);
+    }
+    if (attempts > 2) {
+    return res.status(429).json({ message: "Too many requests, slow down lil nigga" });
+    }
+
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -457,7 +466,9 @@ export const resetPassword = TryCatch(async (req, res) => {
       html ||
       `
         <h2>Your password was recently changed</h2>
-        <p>If this was not you, please reset your password immediately.</p>
+        <p>If this was not you, please 
+        <a href="${process.env.FRONTEND_URL}/forgot-password">
+        reset your password immediately.</p>
       `,
   };
 
@@ -466,4 +477,80 @@ export const resetPassword = TryCatch(async (req, res) => {
     res.json({
         message: "Password has been reset successfully.",
     });
+});
+
+export const userSessions = TryCatch(async (req, res) => {
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+        return res.status(404).json({
+            message: "User not found",
+        });
+    }
+    if(!user.devices || user.devices.length === 0){
+        return res.status(404).json({
+            message: "No sessions found.",
+        });
+    }
+    const sessions = user.devices.sort((a,b) => new Date(b.loggedAt) - new Date(a.loggedAt));
+    
+    return res.json({
+        message: "Active sessions fetched successfully.",
+        totalSessions: sessions.length,
+        sessions,
+    })
+});
+
+export const deleteSession = TryCatch(async (req, res) => {
+    const userId = req.user._id;
+    const sessionIndex = parseInt(req.params.id);
+    
+    if(isNaN(sessionIndex)){
+        return res.status(400).json({
+            message: "Invalid session Index, Please give a valid index",
+        });
+    }
+
+    const user = await User.findById(userId);
+
+    if(!user){
+        return res.status(404).json({
+            message: "User not found",
+        });
+    }
+
+    if(!user.devices || user.devices.length === 0 || sessionIndex >= user.devices.length){
+        return res.status(404).json({
+            message: "Session not found",
+        });
+    }
+
+    const sessionToDelete = user.devices[sessionIndex];
+
+    user.devices.splice(sessionIndex, 1);
+    await user.save();
+
+    //if this was the current user session and check with the current session then revoke all the tokens  
+    const currentUser = req.user;
+    const currentSessionId = req.sessionId;
+
+    const isCurrentSession = user.devices.some(device => 
+        device.ip === sessionToDelete.ip &&
+        device.browser === sessionToDelete.browser &&
+        device.os === sessionToDelete.os
+    );
+
+    if(isCurrentSession){
+        await revokeRefreshToken(userId);
+        res.clearCookie("refreshToken");
+        res.clearCookie("accessToken");
+        res.clearCookie("csrfToken");
+        await redisClient.del(`user:${userId}`);
+    }
+
+    return res.json({
+        message: "Session logged out successfully",
+        wasCurrentSession: isCurrentSession,
+    })
 });
