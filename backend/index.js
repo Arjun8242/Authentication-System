@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { connectdb } from "./db/db.js";
 import userRoutes from "./routes/user.js";
+import messageRoutes from "./routes/message.js";
 import {createClient} from 'redis';
 import cookieParser from "cookie-parser";
 import cors from 'cors';
@@ -34,7 +35,8 @@ app.use(
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }))
 
-app.use("/api/v1", userRoutes);
+app.use("/api/auth/v1", userRoutes);
+app.use("/api/message/v1", messageRoutes);
 
 const PORT = process.env.PORT || 5000;
 
