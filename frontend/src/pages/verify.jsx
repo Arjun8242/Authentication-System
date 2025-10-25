@@ -15,7 +15,7 @@ const Verify = () => {
   async function verifyUser() {
     try {
       const { data } = await axios.post(
-        `${server}/api/auth/v1/verify/${params.token}`
+        `${server}/api/v1/verify/${params.token}`
       );
 
       console.log(data);

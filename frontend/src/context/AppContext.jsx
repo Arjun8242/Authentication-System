@@ -13,7 +13,7 @@ export const AppProvider = ({ children }) => {
     async function fetchUser() {
         setLoading(true);
         try {
-            const { data } = await api.get(`/api/auth/v1/me`);
+            const { data } = await api.get(`/api/v1/me`);
 
             setUser(data.user);
             setIsAuth(true);
@@ -29,7 +29,7 @@ export const AppProvider = ({ children }) => {
 
     async function logoutUser(navigate) {
         try {
-            const {data} = await api.post("/api/auth/v1/logout");
+            const {data} = await api.post("/api/v1/logout");
             toast.success(data.message);
             setIsAuth(false);
             setUser(null);

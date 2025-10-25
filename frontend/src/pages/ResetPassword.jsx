@@ -19,7 +19,7 @@ const ResetPassword = () => {
     }
     setBtnLoading(true);
     try {
-      const { data } = await axios.post(`${server}/api/auth/v1/user/reset-password/${token}`, { password }, { withCredentials: true });
+      const { data } = await axios.post(`${server}/api/v1/user/reset-password/${token}`, { password }, { withCredentials: true });
       toast.success(data.message);
       setTimeout(() => {
         navigate('/login');

@@ -75,7 +75,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshingAccessToken = true;
       try {
-        await api.post("/api/auth/v1/refresh");
+        await api.post("/api/v1/refresh");
         processAccessTokenQueue(null);
         return api(originalRequest);
       } catch (err) {
@@ -101,7 +101,7 @@ api.interceptors.response.use(
       originalRequest._retryCsrf = true;
       isRefreshingCSRFToken = true;
       try {
-        await api.post("/api/auth/v1/refresh-csrf");
+        await api.post("/api/v1/refresh-csrf");
         processCSRFQueue(null);
         return api(originalRequest);
       } catch (err) {

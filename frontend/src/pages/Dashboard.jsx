@@ -11,7 +11,7 @@ const Dashboard = () => {
 
   async function fetchAdminData() {
     try {
-      const { data } = await api.get(`/api/auth/v1/admin`, {
+      const { data } = await api.get(`/api/v1/admin`, {
         withCredentials: true,
       });
       setContent(data.message);

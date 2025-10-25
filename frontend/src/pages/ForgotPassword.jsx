@@ -11,7 +11,7 @@ const ForgotPassword = () => {
     e.preventDefault();
     setBtnLoading(true);
     try {
-      const { data } = await axios.post(`${server}/api/auth/v1/user/forgot-password`, { email }, { withCredentials: true });
+      const { data } = await axios.post(`${server}/api/v1/user/forgot-password`, { email }, { withCredentials: true });
       toast.success(data.message);
     } catch (err) {
       toast.error(err.response?.data?.message || 'An error occurred');
