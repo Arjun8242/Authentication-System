@@ -46,7 +46,7 @@ export const signupUser = TryCatch(async (req, res) => {
 
     if(await redisClient.get(rateLimitKey)){
         return res.status(429).json({
-            message:"too many request, slwo down lil nigga"
+            message:"too many request, slow down lil nigga"
         })
     }
 

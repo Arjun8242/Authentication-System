@@ -18,7 +18,7 @@ const submitHandler = async (e) => {
   const email = localStorage.getItem("email");
   try {
     const { data } = await axios.post(
-      `${server}/api/v1/verify`,
+      `${server}/api/auth/v1/verify`,
       { email, otp },
       { withCredentials: true }
     );

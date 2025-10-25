@@ -16,12 +16,12 @@ function Register() {
     setBtnLoading(true);
     try {
       const { data } = await axios.post(
-        `${server}/api/v1/register`,
+        `${server}/api/auth/v1/register`,
         { name, email, password },
         { withCredentials: true }
       );
       toast.success(data.message);
-      navigate("/api/v1/login");
+      navigate("/api/auth/v1/login");
     } catch (error) {
       toast.error(error.response.data.message);
     } finally {

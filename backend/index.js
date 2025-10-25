@@ -29,7 +29,9 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.NODE_ENV === 'production'
+    ? process.env.FRONTEND_URL
+    : ['http://localhost:5173', 'http://127.0.0.1:5173'],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 }))
@@ -40,4 +42,19 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`✅ Server running at: http://localhost:${PORT}`);
+});
+
+import path from 'path';
+import { fileURLToPath } from 'url';
+import express from 'express';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Catch all handler: send back React's index.html file for client-side routing
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

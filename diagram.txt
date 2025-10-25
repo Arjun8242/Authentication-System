@@ -23,7 +23,7 @@
                             │
                             v
                   ┌─────────────────┐
-                  │ POST /api/v1/   │
+                  │ POST /api/auth/v1/   │
                   │ login           │
                   └─────────┬───────┘
                             │
@@ -112,7 +112,7 @@
                                                                                                               │
                                                                                                               v
 ┌─────────────────┐
-│ POST /api/v1/    │
+│ POST /api/auth/v1/    │
 │ verify           │
 └─────────┬───────┘
                                                                                                                    │
@@ -231,7 +231,7 @@
           │
           v
 ┌─────────────────┐
-│ POST /api/v1/   │
+│ POST /api/auth/v1/   │
 │ register        │
 │ (name, email,   │
 │ password)       │
@@ -309,7 +309,7 @@
                                                       │
                                                       v
                                             ┌─────────────────┐
-                                            │ POST /api/v1/   │
+                                            │ POST /api/auth/v1/   │
                                             │ verify/:token   │
                                             └─────────┬───────┘
                                                       │
@@ -360,7 +360,7 @@
           │
           v
 ┌─────────────────┐
-│ POST /api/v1/   │
+│ POST /api/auth/v1/   │
 │ user/forgot-    │
 │ password        │
 │ (email)         │
@@ -418,7 +418,7 @@
                                 │
                                 v
                       ┌─────────────────┐
-                      │ POST /api/v1/   │
+                      │ POST /api/auth/v1/   │
                       │ user/reset-     │
                       │ password/:token │
                       │ (password)      │
@@ -484,7 +484,7 @@
           │
           v
 ┌─────────────────┐
-│ GET /api/v1/me  │
+│ GET /api/auth/v1/me  │
 │ with Auth       │
 │ middleware      │
 └─────────┬───────┘
@@ -551,7 +551,7 @@
 
 ┌─────────────────┐
 │ Admin Route     │
-│ GET /api/v1/    │
+│ GET /api/auth/v1/    │
 │ admin           │
 │ Auth +          │
 │ authorizedAdmin │
@@ -579,7 +579,7 @@
           │
           v
 ┌─────────────────┐
-│ POST /api/v1/   │
+│ POST /api/auth/v1/   │
 │ logout          │
 │ with Auth +     │
 │ verifyCSRF      │
@@ -739,7 +739,7 @@
           v
  ┌────────▼────────┐
  │      NO         │ ──► ┌─────────────┐
- └─────────────────┘     │ POST /api/v1/ │
+ └─────────────────┘     │ POST /api/auth/v1/ │
                          │ refresh       │
                          └──────┬──────┘
                                 │
@@ -871,7 +871,7 @@
                                                                             v
                                                                     ┌────────▼────────┐
                                                                     │      NO         │ ──► ┌─────────────┐
-                                                                    └─────────────────┘     │ POST /api/v1/ │
+                                                                    └─────────────────┘     │ POST /api/auth/v1/ │
                                                                                             │ refresh-csrf  │
                                                                                             │ with Auth     │
                                                                                             └──────┬──────┘
