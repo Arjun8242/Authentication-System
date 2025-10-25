@@ -23,7 +23,7 @@ const Dashboard = () => {
   async function fetchSessions() {
     setSessionsLoading(true);
     try {
-      const { data } = await api.get(`/api/auth/v1/user/sessions`);
+      const { data } = await api.get(`/api/v1/user/sessions`);
       setSessions(data.sessions || []);
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to fetch sessions");
@@ -34,7 +34,7 @@ const Dashboard = () => {
 
   async function handleLogoutSession(sessionIndex) {
     try {
-      const { data } = await api.delete(`/api/auth/v1/user/session/${sessionIndex}`);
+      const { data } = await api.delete(`/api/v1/user/session/${sessionIndex}`);
       toast.success(data.message);
 
       // If this was the current session, redirect to login

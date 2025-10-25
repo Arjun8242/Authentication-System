@@ -347,10 +347,17 @@ export const logoutUser = TryCatch(async(req, res) => {
 
     await revokeRefreshToken(userId);
 
-    res.clearCookie("refreshToken");
-    res.clearCookie("accessToken");
-    res.clearCookie("csrfToken");
-    
+    const isProduction = process.env.NODE_ENV === 'production';
+    const cookieOptions = {
+        httpOnly: true,
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
+    };
+
+    res.clearCookie("refreshToken", cookieOptions);
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("csrfToken", { ...cookieOptions, httpOnly: false });
+
     await redisClient.del(`user:${userId}`);
 
     return res.json({
@@ -542,9 +549,17 @@ export const deleteSession = TryCatch(async (req, res) => {
 
     if(isCurrentSession){
         await revokeRefreshToken(userId);
-        res.clearCookie("refreshToken");
-        res.clearCookie("accessToken");
-        res.clearCookie("csrfToken");
+
+        const isProduction = process.env.NODE_ENV === 'production';
+        const cookieOptions = {
+            httpOnly: true,
+            secure: isProduction,
+            sameSite: isProduction ? "none" : "lax",
+        };
+
+        res.clearCookie("refreshToken", cookieOptions);
+        res.clearCookie("accessToken", cookieOptions);
+        res.clearCookie("csrfToken", { ...cookieOptions, httpOnly: false });
         await redisClient.del(`user:${userId}`);
     }
 

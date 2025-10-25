@@ -8,10 +8,12 @@ export const generateCSRFToken = async (userId, res) => {
 
     await redisClient.setEx(csrfkey, 3600, csrfToken);
 
+    const isProduction = process.env.NODE_ENV === 'production';
+
     res.cookie("csrfToken", csrfToken, {
-        httpOnly: false,
-        secure: true,
-        sameSite: "none",
+        httpOnly: false, // Must be false so frontend can read it
+        secure: isProduction, // Only secure in production
+        sameSite: isProduction ? "none" : "lax",
         maxAge:60*60*1000,
     });
 

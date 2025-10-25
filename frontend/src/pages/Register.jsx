@@ -21,9 +21,9 @@ function Register() {
         { withCredentials: true }
       );
       toast.success(data.message);
-      navigate("/api/v1/login");
+      navigate("/login");
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Something went wrong");
     } finally {
       setBtnLoading(false);
     }

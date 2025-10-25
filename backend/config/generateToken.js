@@ -39,17 +39,19 @@ export const generateToken = async(id, res) => {
     await redisClient.setEx(activeSessionKey, 7*24*60*60,
     sessionId);
 
+    const isProduction = process.env.NODE_ENV === 'production';
+
     res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",// to avoid csrf attck
+        secure: isProduction, // Only secure in production (HTTPS)
+        sameSite: isProduction ? "none" : "lax", // "none" for production, "lax" for local
         maxAge: 15*60*1000,
     })
     res.cookie("refreshToken", refreshToken, {
         maxAge: 7*24*60*60*1000,
         httpOnly: true,
-        sameSite: "none",
-        secure: true,
+        sameSite: isProduction ? "none" : "lax",
+        secure: isProduction,
     });
 
     const csrfToken = await generateCSRFToken(id, res);
@@ -94,13 +96,15 @@ export const verifyRefreshToken = async(refreshToken) => {
 }
 
 export const generateAccessToken = (id, sessionId, res) => {
+    const isProduction = process.env.NODE_ENV === 'production';
+
     const accessToken = jwt.sign({id, sessionId}, process.env.JWT_SECRET, {
         expiresIn: "15m",
     })
     res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",// to avoid csrf attck
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "lax",
         maxAge: 15*60*1000,
     })
 };
