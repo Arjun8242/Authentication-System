@@ -55,9 +55,9 @@ const __dirname = path.dirname(__filename);
 
 // Serve static files from the React app build directory
 app.use(express.static(path.join(__dirname, 'public')));
-
 // Catch all handler: send back React's index.html file for client-side routing
-app.get('/*', (req, res) => {
+app.use((req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
 
