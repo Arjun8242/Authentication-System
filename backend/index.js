@@ -21,8 +21,11 @@ export const redisClient = createClient({
 
 redisClient
 .connect()
-.then(() => console.log("connected to redis"))
-.catch(console.error);
+.then(() => console.log("Connected to Redis"))
+.catch((error) => {
+    console.error("Failed to connect to Redis:", error.message);
+    process.exit(1);
+});
 
 const app = express();
 app.use(express.json());
@@ -46,7 +49,6 @@ app.listen(PORT, () => {
 
 import path from 'path';
 import { fileURLToPath } from 'url';
-import express from 'express';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

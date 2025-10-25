@@ -11,7 +11,6 @@ import { getOtpHtml, getVerifyEmailHtml } from "../config/html.js";
 import sendMail from "../config/sendmail.js";
 import { generateAccessToken, generateToken, revokeRefreshToken, verifyRefreshToken } from "../config/generateToken.js";
 import { generateCSRFToken } from "../config/csrfMiddleware.js";
-import { DeviceVendor } from "ua-parser-js/enums";
 
 export const signupUser = TryCatch(async (req, res) => {
     
@@ -327,8 +326,8 @@ export const refreshToken = TryCatch(async(req, res) => {
             message:"invalids refresh token",
         })
     }
-    const decode = await verifyRefreshToken(refreshToken)
-        console.log("decode", decode);
+    const decode = await verifyRefreshToken(refreshToken);
+    console.log("decode", decode);
 
     if(!decode){
         return res.status(401).json({

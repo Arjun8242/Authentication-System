@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { redisClient } from '../index.js ';
+import { redisClient } from '../index.js';
 import { User } from "../models/user.model.js";
 import { isSessionActive } from '../config/generateToken.js';
 
@@ -31,10 +31,8 @@ export const Auth = async(req, res, next) => {
             res.clearCookie("accessToken");
             res.clearCookie("csrfToken");
 
-            console.log(sessionActive);
-            
             return res.status(401).json({
-            message: "Session Expired. You have been logged in from another device",
+                message: "Session Expired. You have been logged in from another device",
             });
         }
         

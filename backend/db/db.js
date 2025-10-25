@@ -8,7 +8,8 @@ export const connectdb = async() => {
         console.log("mongo db is connected");
         
     } catch (error) {
-        console.log("failed to connect database")
+        console.error("Failed to connect to database:", error.message);
+        process.exit(1);
     }
 }
 
