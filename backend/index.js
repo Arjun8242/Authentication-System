@@ -5,6 +5,7 @@ import userRoutes from "./routes/user.js";
 import {createClient} from 'redis';
 import cookieParser from "cookie-parser";
 import cors from 'cors';
+import './workers/emailWorker.js'; // Start email worker
 
 dotenv.config();
 await connectdb();
