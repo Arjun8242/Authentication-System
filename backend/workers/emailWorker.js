@@ -17,8 +17,8 @@ const createEmailTransport = () => {
     });
 };
 
-// Process email jobs
-emailQueue.process(async (job) => {
+// Process email jobs with concurrency
+emailQueue.process(5, async (job) => {
     const { email, subject, html } = job.data;
 
     console.log(`📧 Processing email job ${job.id} for: ${email}`);
@@ -52,6 +52,15 @@ emailQueue.process(async (job) => {
         console.error(`   Full error:`, error);
         throw error; // This will trigger retry logic
     }
+});
+
+// Handle worker errors
+emailQueue.on('error', (error) => {
+    console.error('❌ Email queue error:', error);
+});
+
+emailQueue.on('stalled', (job) => {
+    console.warn(`⚠️ Email job ${job.id} stalled`);
 });
 
 console.log('📬 Email worker started and listening for jobs...');

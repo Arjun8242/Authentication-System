@@ -15,7 +15,10 @@ const emailQueue = new Queue('email', redisUrl, {
     redis: {
         tls: {
             rejectUnauthorized: false
-        }
+        },
+        maxRetriesPerRequest: null, // Important for Bull
+        enableReadyCheck: false,
+        enableOfflineQueue: true
     },
     defaultJobOptions: {
         attempts: 3, // Retry failed jobs 3 times
@@ -29,6 +32,14 @@ const emailQueue = new Queue('email', redisUrl, {
 });
 
 // Event listeners for monitoring
+emailQueue.on('connected', () => {
+    console.log('✅ Email queue connected to Redis');
+});
+
+emailQueue.on('ready', () => {
+    console.log('✅ Email queue ready');
+});
+
 emailQueue.on('completed', (job) => {
     console.log(`✅ Email job ${job.id} completed successfully`);
 });
@@ -39,6 +50,10 @@ emailQueue.on('failed', (job, err) => {
 
 emailQueue.on('error', (error) => {
     console.error('❌ Email queue error:', error);
+});
+
+emailQueue.on('stalled', (job) => {
+    console.warn(`⚠️ Email job ${job.id} stalled`);
 });
 
 export default emailQueue;
