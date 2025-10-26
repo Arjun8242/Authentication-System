@@ -15,6 +15,7 @@ export const generateCSRFToken = async (userId, res) => {
         secure: isProduction, // Only secure in production
         sameSite: isProduction ? "none" : "lax",
         maxAge:60*60*1000,
+        path: '/',
     });
 
     return csrfToken;

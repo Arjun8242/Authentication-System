@@ -15,12 +15,12 @@ export const generateToken = async(id, res) => {
     });
 
     const refreshTokenKey = `refresh_token:${id}`;
-    const activeSessionKey = `active_session:${sessionId}`;
+    const activeSessionKey = `active_session:${id}`;
     const sessionDataKey = `session:${sessionId}`;
 
-    const existingSession = await redisClient.get(activeSessionKey);
-    if(existingSession){
-        await redisClient.del(`session:${existingSession}`);
+    const existingSessionId = await redisClient.get(activeSessionKey);
+    if(existingSessionId){
+        await redisClient.del(`session:${existingSessionId}`);
         await redisClient.del(`refresh_token:${id}`);
     }
 
@@ -46,12 +46,14 @@ export const generateToken = async(id, res) => {
         secure: isProduction, // Only secure in production (HTTPS)
         sameSite: isProduction ? "none" : "lax", // "none" for production, "lax" for local
         maxAge: 15*60*1000,
+        path: '/',
     })
     res.cookie("refreshToken", refreshToken, {
         maxAge: 7*24*60*60*1000,
         httpOnly: true,
         sameSite: isProduction ? "none" : "lax",
         secure: isProduction,
+        path: '/',
     });
 
     const csrfToken = await generateCSRFToken(id, res);
@@ -106,6 +108,7 @@ export const generateAccessToken = (id, sessionId, res) => {
         secure: isProduction,
         sameSite: isProduction ? "none" : "lax",
         maxAge: 15*60*1000,
+        path: '/',
     })
 };
 
@@ -121,6 +124,6 @@ export const revokeRefreshToken = async(userId) => {
 }
 
 export const isSessionActive = async(userId, sessionId) => {
-    const activeSessionId = await redisClient.get(`active_session:${sessionId}`);
+    const activeSessionId = await redisClient.get(`active_session:${userId}`);
     return activeSessionId === sessionId;
-};  
+};
