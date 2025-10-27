@@ -71,7 +71,7 @@ export const verifyRefreshToken = async(refreshToken) => {
             return null;
         }
 
-        const activeSessionId = await redisClient.get(`active_session:${decode.sessionId}`);
+        const activeSessionId = await redisClient.get(`active_session:${decode.userId}`);
 
         if(activeSessionId !== decode.sessionId){
             return null;

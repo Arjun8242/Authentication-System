@@ -319,7 +319,6 @@ export const myProfile = TryCatch(async(req, res) => {
 
 export const refreshToken = TryCatch(async(req, res) => {
     const refreshToken = req.cookies.refreshToken;
-    console.log("refreshToken", refreshToken);
 
     if(!refreshToken){
         return res.status(401).json({
@@ -327,7 +326,6 @@ export const refreshToken = TryCatch(async(req, res) => {
         })
     }
     const decode = await verifyRefreshToken(refreshToken);
-    console.log("decode", decode);
 
     if(!decode){
         return res.status(401).json({

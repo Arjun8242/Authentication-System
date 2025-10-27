@@ -1,11 +1,23 @@
 import jwt from 'jsonwebtoken';
 import { redisClient } from '../index.js';
 import { User } from "../models/user.model.js";
-import { isSessionActive } from '../config/generateToken.js';
+import { generateAccessToken, isSessionActive, verifyRefreshToken } from '../config/generateToken.js';
 
 export const Auth = async(req, res, next) => {
     try {
-        const token = req.cookies.accessToken;
+        let token = req.cookies.accessToken;
+
+        if (!token) {
+            const refreshToken = req.cookies.refreshToken;
+            
+            if (refreshToken) {
+                const decodedRefresh = await verifyRefreshToken(refreshToken);
+                if (decodedRefresh) {
+                    generateAccessToken(decodedRefresh.id, decodedRefresh.sessionId, res);
+                    token = req.cookies.accessToken;                    
+                }
+            }
+        }
 
         if(!token){
             return res.status(401).json({

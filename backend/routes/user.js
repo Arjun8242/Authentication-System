@@ -13,10 +13,10 @@ router.post("/user/forgot-password", forgotPassword);
 router.post("/user/reset-password/:token", resetPassword);
 router.get("/me", Auth, myProfile);
 router.post("/refresh", refreshToken);
-router.post("/logout", Auth, verifyCSRFToken, logoutUser);
+router.post("/logout", Auth, logoutUser);
 router.post("/refresh-csrf", Auth, refreshCSRF);
 router.get("/admin", Auth, authorizedAdmin, adminController);
 router.get("/user/sessions", Auth, userSessions);
-router.delete("/user/session/:id", Auth, deleteSession);
+router.delete("/user/session/:id", Auth, verifyCSRFToken, deleteSession);
 
 export default router;
